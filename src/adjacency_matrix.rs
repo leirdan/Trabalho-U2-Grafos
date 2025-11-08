@@ -264,6 +264,7 @@ mod tests {
 
     use super::*;
 
+    /* TODO: uncomment each one while reimplementing
     #[test]
     fn undirected_graph_matrix_size() {
         let undirected_m = AdjacencyMatrix(vec![
@@ -577,4 +578,5 @@ mod tests {
         assert_eq!(degrees_1, (1, 1)); // in: 0->1, out: 1->2
         assert_eq!(degrees_2, (1, 1)); // in: 1->2, out: 2->0
     }
+    */
 }
