@@ -65,7 +65,6 @@ where
     /// If either node does not exist, this operation has no effect.
     fn remove_edge(&mut self, n: T, m: T);
 
-    // Comentado para simplificar
     type Neighbors<'a>: Iterator<Item = T>
     where
         Self: 'a,
@@ -76,6 +75,17 @@ where
     /// # Arguments
     /// * `n` — The node whose outgoing neighbors are to be listed.
     fn neighbors<'a>(&'a self, n: T) -> Option<Self::Neighbors<'a>>;
+
+    type WeightedNeighbors<'a>: Iterator<Item = (T, i32)>
+    where
+        Self: 'a,
+        T: 'a;
+
+    /// Returns an iterator over all **neighbors** (adjacent nodes) of a given node.
+    ///
+    /// # Arguments
+    /// * `n` — The node whose outgoing neighbors are to be listed.
+    fn weighted_neighbors<'a>(&'a self, n: T) -> Option<Self::WeightedNeighbors<'a>>;
 
     /// Checks whether the graph is **bipartite** and returns `true` or `false`
     fn bipartite(&self) -> bool;
@@ -591,6 +601,62 @@ where
     }
 }
 
+pub struct DijkstraIter<'a, T, G>
+where
+    T: Node,
+    G: Graph<T>,
+{
+    graph: &'a G,
+    visited: HashSet<T>,
+    distance: HashSet<(T, i32)>,
+    parent: HashMap<T, Option<T>>,
+}
+
+/*
+impl<'a, T, G> DijkstraIter<'a, T, G>
+where
+    T: Node,
+    G: Graph<T>,
+{
+    fn new(graph: &'a G, start: T) -> Self {
+        let mut visited: HashSet<T> = HashSet::new();
+        let mut distance: HashSet<(T, i32)> = HashSet::new();
+        let mut parent: HashMap<T, Option<T>> = HashMap::new();
+        visited.insert(start);
+        distance.insert((start, 0));
+        parent.insert(start, None);
+
+        if let Some(neighbors) = graph.neighbors(start) {
+            for neighbor in neighbors {
+                neighbor.
+                parent.insert(neighbor, Some(start));
+                distance.insert((neighbor, );
+            }
+
+        }
+
+        Self {
+            graph,
+            visited: HashSet::new(),
+            distance: HashSet::new(),
+            parent: HashMap::new(),
+        }
+    }
+}
+
+impl<'a, T, G> Iterator for DijkstraIter<'a, T, G>
+where
+    T: Node,
+    G: Graph<T>,
+{
+    // TODO: maybe add some DijkstraEvent? Dont know..
+    type Item = ();
+
+    fn next(&mut self) -> Option<Self::Item> {
+        None
+    }
+}
+*/
 #[cfg(test)]
 mod test {
     use crate::{DfsEvent, Graph, UndirectedGraph, graphs::AdjacencyList};
