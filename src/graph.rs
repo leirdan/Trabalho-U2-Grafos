@@ -2,6 +2,11 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 use std::hash::Hash;
 
+pub trait Node: Eq + Hash + Copy {}
+
+// Todo tipo que tem essas restrições é um node
+impl<T> Node for T where T: Eq + Hash + Copy {}
+
 /// Defines a generic interface for a graph data structure.
 ///
 /// The [`Graph`] trait represents a **directed graph**, where each node can have
@@ -14,12 +19,6 @@ use std::hash::Hash;
 /// # Type Parameters
 /// - `Node`: The type used to represent graph nodes.
 ///   Must implement [`Eq`], [`Hash`], and [`Copy`] to ensure efficient lookups.
-
-pub trait Node: Eq + Hash + Copy {}
-
-// Todo tipo que tem essas restrições é um node
-impl<T> Node for T where T: Eq + Hash + Copy {}
-
 pub trait Graph<T>
 where
     T: Node,
@@ -673,15 +672,13 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         let mut unvisited_node: Option<(T, i32)> = None;
 
-        for (_, node) in self.graph.nodes().enumerate() {
-            if !self.visited.contains(&node) {
-                if let Some(distance) = self.distance.get(&node) {
-                    if unvisited_node.is_none()
-                        || (unvisited_node.is_some() && distance < &unvisited_node.unwrap().1)
-                    {
-                        unvisited_node = Some((node, *distance));
-                    }
-                }
+        for node in self.graph.nodes() {
+            if !self.visited.contains(&node)
+                && let Some(distance) = self.distance.get(&node)
+                && (unvisited_node.is_none()
+                    || (unvisited_node.is_some() && distance < &unvisited_node.unwrap().1))
+            {
+                unvisited_node = Some((node, *distance));
             }
         }
 
