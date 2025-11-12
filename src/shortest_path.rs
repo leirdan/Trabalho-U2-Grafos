@@ -108,7 +108,7 @@ where
 
 mod test {
     use super::*;
-    use crate::{Graph, graphs::AdjacencyMatrix};
+    use crate::{Graph, graphs::AdjacencyList};
 
     #[test]
     fn dijkstra_graph() {
@@ -178,8 +178,8 @@ mod test {
         map.insert(6, set6);
         map.insert(7, set7);
 
-        let g: AdjacencyMatrix<usize> = AdjacencyMatrix(map);
-        let mut iter: DijkstraIter<usize, AdjacencyMatrix<usize>> = g.shortest_path_dijkstra(1);
+        let g: AdjacencyList<usize> = AdjacencyList(map);
+        let mut iter: DijkstraIter<usize, AdjacencyList<usize>> = g.shortest_path_dijkstra(1);
         while let Some(event) = iter.next() {
             match event {
                 DijkstraEvent::Discover((node, weight)) => println!(
@@ -263,8 +263,8 @@ mod test {
         map.insert('E', set5);
         map.insert('F', set6);
 
-        let g: AdjacencyMatrix<char> = AdjacencyMatrix(map);
-        let mut iter: DijkstraIter<char, AdjacencyMatrix<char>> = g.shortest_path_dijkstra('A');
+        let g: AdjacencyList<char> = AdjacencyList(map);
+        let mut iter: DijkstraIter<char, AdjacencyList<char>> = g.shortest_path_dijkstra('A');
         while let Some(event) = iter.next() {
             match event {
                 DijkstraEvent::Discover((node, weight)) => println!(

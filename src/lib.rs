@@ -1,5 +1,5 @@
 //! A Rust crate for representing and manipulating graphs using various data structures.
-mod adjacency_matrix;
+mod adjacency_list;
 mod eulerian_cycle;
 mod graph;
 mod minimum_spanning_tree;
@@ -11,7 +11,7 @@ pub use graph::Node;
 pub use graph::UndirectedGraph;
 
 pub mod graphs {
-    pub use crate::adjacency_matrix::AdjacencyMatrix;
+    pub use crate::adjacency_list::AdjacencyList;
     pub use crate::shortest_path::DijkstraIter;
     pub use crate::traversal::BfsEvent;
     pub use crate::traversal::BfsIter;
