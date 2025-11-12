@@ -1,49 +1,85 @@
-\chapter{Descrição em Pseudocódigo dos Algoritmos da API}
-\label{ch:pseudocode}
+\chapter{Implementação}
+\label{ch:implementation}
 
-Neste capítulo, apresentaremos a descrição dos algoritmos, na forma de pseudocódigos, que constam na especificação da API. Este capítulo tem por objetivo preparar o leitor para ler e compreender com clareza a implementação feita em Rust, trazendo descrições e explicações que elucidem o funcionamento de cada algoritmo.
+Nesse capítulo serão mostradas as implementações reais de cada algoritmo, acrescidas de comentários que elucidem as escolhas de implementações tomadas. 
+
+Antes de comentar das implementações, ressaltamos que os algoritmos foram elaborados no formato de Iteradores. Dado que Grafos são estruturas diversas e que podem ser representadas de múltiplas maneiras, a criação de iteradores para cada algoritmo pode ser aplicada no lugar de funções específicas para cada ED, onde o iterador não precisa conhecer detalhes de implementação da estrutura para funcionar. Além disso, o iterador fornece a execução de qualquer algoritmo passo a passo e pode armazenar dados em sua própria estrutura, o que é bastante útil para armazenar informações úteis que não pertencem originalmente ao grafo, como uma lista de vértices visitados. Por fim, em Rust, iteradores tem a característica de serem abstrações de zero custo, ou seja, não geram custo adicional em tempo de execução, sendo similares a loops convencionais.
 
 \section{Algoritmos de Árvore Geradora Mínima}
 \section{Algoritmos de Caminho Mais Curto}
-
 \subsection{Algoritmo de Dijkstra}
-O Algoritmo de Dijkstra \cite{dijkstraarticle}, proposto pelo cientista da computação Edsger Dijkstra, é um algoritmo extremamente útil para encontrar o caminho mais curto dentro de um grafo ponderado orientado ou não orientado sem arestas negativas. 
+Para a implementação de Dijkstra foi elaborado o seguinte iterador:
+\begin{lstlisting}[language=Rust, caption={Iterador de Dijkstra}]
+#[derive(Debug)]
+pub struct DijkstraIter<'a, T, G>
+where
+    T: Node,
+    G: Graph<T>,
+{
+    graph: &'a G,
+    visited: HashSet<T>,
+    distance: HashMap<T, i32>,
+    parent: HashMap<T, Option<T>>,
+}
+\end{lstlisting}
 
-\begin{algorithm}
-	\caption{Algoritmo de Dijkstra}
-	\begin{algorithmic}[0]
-		\Require{$ \mathbf{G(V, A, W)}$, $v \in \mathbf{V}$}
-		\Ensure{Sequência de $v \in \mathbf{V}$ ordenados que formam o caminho mais curto}
-		\Statex
-		\Function{Dijkstra}{G (V, A, W), s}
-		\State{$predecessor \gets []$}
-		\State{$predecessor[s] \gets$ nulo}
-		\State{$visitado \gets []$}
-		\State{$visitado[s] \gets 1$}
-		\State{$distancia \gets []$}
-		\State{$distancia[s] \gets 0$}
-		\For{$v \in V$}
-		\If{$v \in G.vizinhos()$}
-			\State{$predecessor[v] \gets s$}
-			\State{$distancia[v] \gets w(sv)$}
-		\Else
-			\State{$predecessor[v] \gets$ nulo}
-			\State{$distancia[v] \gets \inf$}
-		\EndIf
-		\EndFor
-		\While{$u \in V \land u \not \in visitado$} 
-		\State{$v \gets \min V$}
-		\State{$visitado[v] \gets 1$}
-		\For{$n \in v.vizinhos()$}
-		\If{$n \not \in visitado \land distancia[n] > distancia[v] + w(vn)$}
-			\State{$distancia[n] \gets distancia[v] + w(vn)$}
-			\State{$predecessor[n] \gets v$}
-		\EndIf
-		\EndFor
-		\EndWhile
-		\State \Return{$(visitado, distancia)$}
-		\EndFunction
-	\end{algorithmic}
-\end{algorithm}
+Este iterador, além de guardar o grafo original a ser percorrido, guarda um conjunto de vértices visitados, um map/dicionário que contém a distância de cada vértice e um map/dicionário com o predecessor de cada vértice, caso haja. Agora, partindo para a implementação do iterador, temos:
 
-\section{Algoritmos em Grafos Eulerianos}
+\begin{lstlisting}[language=Rust, caption={Implementação do iterador de Dijkstra}]
+impl<'a, T, G> Iterator for DijkstraIter<'a, T, G>
+where
+    T: Node,
+    G: Graph<T>,
+{
+    type Item = DijkstraEvent<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut unvisited_node: Option<(T, i32)> = None;
+
+        for node in self.graph.nodes() {
+            if !self.visited.contains(&node)
+                && let Some(distance) = self.distance.get(&node)
+                && (unvisited_node.is_none()
+                    || (unvisited_node.is_some() && distance < &unvisited_node.unwrap().1))
+            {
+                unvisited_node = Some((node, *distance));
+            }
+        }
+
+        match unvisited_node {
+            None => None,
+            Some((node, node_weight)) => {
+                self.visited.insert(node);
+
+                if let Some(neighbors) = self.graph.neighbors(node) {
+                    for (neighbor, edge_weight) in neighbors {
+                        if !self.visited.contains(&neighbor) {
+                            let new_distance = edge_weight + node_weight;
+
+                            match self.distance.get(&neighbor) {
+                                Some(&neighbor_distance) => {
+                                    if neighbor_distance > new_distance {
+                                        self.distance.insert(neighbor, new_distance);
+                                        self.parent.insert(neighbor, Some(node));
+                                    }
+                                }
+                                None => {
+                                    self.distance.insert(neighbor, new_distance);
+                                    self.parent.insert(neighbor, Some(node));
+                                }
+                            }
+                        }
+                    }
+                }
+                Some(DijkstraEvent::Discover((node, node_weight)))
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+A cada passo do iterador, ele calcula qual é o nó disponível com menor distância, adiciona-o no conjunto dos visitados e realiza o relaxamento de seus vizinhos e retorna o novo vértice do caminho mais curto junto de sua distância. Caso não haja mais nós disponíveis no início do algoritmo, o iterador retorna `None`, um vazio.
+
+Os consumidores deste iterador serão capazes de montar o caminho mais curto a partir dos campos atualizados do iterador.
+
+\section{Algoritmos de Grafos Eulerianos}

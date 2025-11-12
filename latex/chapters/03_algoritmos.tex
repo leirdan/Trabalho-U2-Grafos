@@ -1,0 +1,49 @@
+\chapter{Descrição em Pseudocódigo dos Algoritmos da API}
+\label{ch:pseudocode}
+
+Neste capítulo, apresentaremos a descrição dos algoritmos, na forma de pseudocódigos, que constam na especificação da API. Este capítulo tem por objetivo preparar o leitor para ler e compreender com clareza a implementação feita em Rust, trazendo descrições e explicações que elucidem o funcionamento de cada algoritmo.
+
+\section{Algoritmos de Árvore Geradora Mínima}
+\section{Algoritmos de Caminho Mais Curto}
+
+\subsection{Algoritmo de Dijkstra}
+O Algoritmo de Dijkstra \cite{dijkstraarticle}, proposto pelo cientista da computação Edsger Dijkstra, é um algoritmo extremamente útil para encontrar o caminho mais curto dentro de um grafo ponderado orientado ou não orientado sem arestas negativas. 
+
+\begin{algorithm}
+	\caption{Algoritmo de Dijkstra}
+	\begin{algorithmic}[0]
+		\Require{$ \mathbf{G(V, A, W)}$, $v \in \mathbf{V}$}
+		\Ensure{Sequência de $v \in \mathbf{V}$ ordenados que formam o caminho mais curto}
+		\Statex
+		\Function{Dijkstra}{G (V, A, W), s}
+		\State{$predecessor \gets []$}
+		\State{$predecessor[s] \gets$ nulo}
+		\State{$visitado \gets []$}
+		\State{$visitado[s] \gets 1$}
+		\State{$distancia \gets []$}
+		\State{$distancia[s] \gets 0$}
+		\For{$v \in V$}
+		\If{$v \in G.vizinhos()$}
+			\State{$predecessor[v] \gets s$}
+			\State{$distancia[v] \gets w(sv)$}
+		\Else
+			\State{$predecessor[v] \gets$ nulo}
+			\State{$distancia[v] \gets \inf$}
+		\EndIf
+		\EndFor
+		\While{$u \in V \land u \not \in visitado$} 
+		\State{$v \gets \min V$}
+		\State{$visitado[v] \gets 1$}
+		\For{$n \in v.vizinhos()$}
+		\If{$n \not \in visitado \land distancia[n] > distancia[v] + w(vn)$}
+			\State{$distancia[n] \gets distancia[v] + w(vn)$}
+			\State{$predecessor[n] \gets v$}
+		\EndIf
+		\EndFor
+		\EndWhile
+		\State \Return{$(visitado, distancia)$}
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
+
+\section{Algoritmos em Grafos Eulerianos}
