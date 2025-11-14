@@ -70,13 +70,12 @@ where
             rank.insert(n, 0);
         }
 
-        // coleta arestas sem duplicatas 
+        // coleta arestas sem duplicatas
         let mut seen: HashSet<(T, T)> = HashSet::with_capacity(nodes.len() * 2);
         let mut edges: Vec<(T, T, i32)> = Vec::new();
 
         for &u in &nodes {
             if let Some(neis) = graph.weighted_neighbors(u) {
-               
                 for &(v, w) in neis {
                     let (a, b) = if u <= v { (u, v) } else { (v, u) };
                     if seen.insert((a, b)) {
@@ -248,7 +247,9 @@ where
         while self.next_seed < self.nodes.len() && self.visited.len() == self.nodes.len() {
             self.next_seed += 1;
         }
-        while self.next_seed < self.nodes.len() && self.visited.contains(&self.nodes[self.next_seed]) {
+        while self.next_seed < self.nodes.len()
+            && self.visited.contains(&self.nodes[self.next_seed])
+        {
             self.next_seed += 1;
         }
         if self.next_seed < self.nodes.len() {
@@ -326,15 +327,16 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::{HashMap, HashSet};
     use crate::adjacency_list::AdjacencyList;
+    use std::collections::{HashMap, HashSet};
 
     fn build_test_map() -> HashMap<usize, HashSet<(usize, i32)>> {
         let mut map: HashMap<usize, HashSet<(usize, i32)>> = HashMap::new();
-        let insert_undir = |m: &mut HashMap<usize, HashSet<(usize, i32)>>, a: usize, b: usize, w: i32| {
-            m.entry(a).or_insert_with(HashSet::new).insert((b, w));
-            m.entry(b).or_insert_with(HashSet::new).insert((a, w));
-        };
+        let insert_undir =
+            |m: &mut HashMap<usize, HashSet<(usize, i32)>>, a: usize, b: usize, w: i32| {
+                m.entry(a).or_insert_with(HashSet::new).insert((b, w));
+                m.entry(b).or_insert_with(HashSet::new).insert((a, w));
+            };
 
         // Grafo:
         // 1-3 7

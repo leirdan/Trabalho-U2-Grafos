@@ -1,8 +1,8 @@
 use crate::graphs::{
     BfsIter, BiconnectedComponentsIter, DfsEdgesIter, DfsIter, DijkstraIter, Edge,
 };
-use std::hash::Hash;
-use std::collections::HashSet; // adicionado para weighted_neighbors
+use std::collections::HashSet;
+use std::hash::Hash; // adicionado para weighted_neighbors
 
 pub trait Node: Eq + Hash + Copy {}
 
@@ -156,7 +156,9 @@ where
     /// Inicializa o iterador passo-a-passo do Kruskal (apenas para grafos não direcionados).
     ///
     /// Implementação padrão delega para KruskalIter::new - implementações concretas não precisam sobrescrever.
-    fn minimum_spanning_tree_kruskal(&self) -> crate::minimum_spanning_tree::KruskalIter<'_, T, Self>
+    fn minimum_spanning_tree_kruskal(
+        &self,
+    ) -> crate::minimum_spanning_tree::KruskalIter<'_, T, Self>
     where
         Self: Sized,
         T: Ord,
