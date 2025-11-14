@@ -69,14 +69,20 @@ where
                         }
                     }
                 }
-                Some(DijkstraEvent::Discover((node, node_weight)))
+
+                let mut parent: Option<T> = None;
+                if let Some(opt) = self.parent.get(&node) {
+                    parent = *opt;
+                }
+
+                Some(DijkstraEvent::Discover((node, node_weight, parent)))
             }
         }
     }
 }
 \end{lstlisting}
 
-A cada passo do iterador, ele calcula qual é o nó disponível com menor distância, adiciona-o no conjunto dos visitados, realiza o relaxamento de seus vizinhos e retorna o novo vértice do caminho mais curto junto de sua distância. Caso não haja mais nós disponíveis no início do algoritmo, o iterador retorna \texttt{None}, indicando o fim do algoritmo.
+A cada passo do iterador, ele calcula qual é o nó disponível com menor distância, adiciona-o no conjunto dos visitados, realiza o relaxamento de seus vizinhos e retorna o novo vértice do caminho mais curto junto de sua distância e de seu predecessor, caso haja. Caso não haja mais nós disponíveis no início do algoritmo, o iterador retorna \texttt{None}, indicando o fim do algoritmo.
 
 Os consumidores deste iterador serão capazes de montar o caminho mais curto a partir do retorno de cada iteração, onde é retornada uma tripla com o nó que foi visitado, a distância até ele e o seu predecessor. Para encontrar o caminho mais curto entre dois nós, por exemplo, basta salvar todos estes retornos, acessar o elemento que contém o nó final da busca, capturar seu predecessor e explorá-lo até encontrar o nó inicial.
 
