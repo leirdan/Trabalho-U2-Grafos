@@ -7,7 +7,7 @@ Neste capítulo, apresentaremos a descrição dos algoritmos, na forma de pseudo
 \section{Algoritmos de Caminho Mais Curto}
 
 \subsection{Algoritmo de Dijkstra}
-O Algoritmo de Dijkstra \cite{dijkstraarticle}, proposto pelo cientista da computação Edsger Dijkstra, é um algoritmo extremamente útil para encontrar o caminho mais curto dentro de um grafo ponderado orientado ou não orientado sem arestas negativas. 
+O Algoritmo de \cite{dijkstraarticle}, proposto pelo cientista da computação Edsger Dijkstra, é um algoritmo extremamente útil para encontrar o caminho mais curto dentro de um grafo ponderado orientado ou não orientado sem arestas negativas. 
 
 \begin{algorithm}
 	\caption{Algoritmo de Dijkstra}
@@ -45,5 +45,8 @@ O Algoritmo de Dijkstra \cite{dijkstraarticle}, proposto pelo cientista da compu
 		\EndFunction
 	\end{algorithmic}
 \end{algorithm}
+
+O algoritmo acima escolhe o vértice para operar com base no que tem a menor distância alcançável. No início, ele visita o primeiro vértice e determina a distância para os vizinhos como sendo o peso de suas arestas; para os que não são alcançáveis, a distância é infinita. Então, enquanto existirem vértices não visitados, o algortimo seleciona o que tem a menor distância, o visita e então relaxa os seus vizinhos: o relaxamento consiste em mudar o caminho no qual o vizinho é visitado, caso isso melhore a distância até o vizinho. Isso é feito verificando se a distância do vizinho é pior do que a distância até o vértice atual + o peso da aresta que liga os dois. \\
+Após o relaxamento, tudo se repete até que todos os vértices estejam visitados. Então, ao final das iterações, teremos a menor rota de um ponto de origem até todos os demais vértices.
 
 \section{Algoritmos em Grafos Eulerianos}
