@@ -109,7 +109,6 @@ where
 }
 
 #[cfg(test)]
-
 mod test {
     use super::*;
     use crate::{Graph, graphs::AdjacencyList};
@@ -185,7 +184,7 @@ mod test {
         let g: AdjacencyList<usize> = AdjacencyList(map);
         let mut iter: DijkstraIter<usize, AdjacencyList<usize>> = g.shortest_path_dijkstra(1);
 
-        while let Some(event) = iter.next() {
+        for event in &mut iter {
             match event {
                 DijkstraEvent::Discover((node, weight, parent)) => println!(
                     "Visitamos o vértice {} e agora tem distância {} a partir do predecessor {}",
@@ -200,20 +199,20 @@ mod test {
         assert_eq!(iter.visited.len(), 7);
         assert_eq!(iter.distance.len(), 7);
         assert_eq!(iter.parent.len(), 7);
-        assert_eq!(iter.distance.get(&1), Some(0 as i32).as_ref());
-        assert_eq!(iter.distance.get(&2), Some(2 as i32).as_ref());
-        assert_eq!(iter.distance.get(&3), Some(4 as i32).as_ref());
-        assert_eq!(iter.distance.get(&4), Some(4 as i32).as_ref());
-        assert_eq!(iter.distance.get(&5), Some(6 as i32).as_ref());
-        assert_eq!(iter.distance.get(&6), Some(7 as i32).as_ref());
-        assert_eq!(iter.distance.get(&7), Some(11 as i32).as_ref());
+        assert_eq!(iter.distance.get(&1), Some(0).as_ref());
+        assert_eq!(iter.distance.get(&2), Some(2).as_ref());
+        assert_eq!(iter.distance.get(&3), Some(4).as_ref());
+        assert_eq!(iter.distance.get(&4), Some(4).as_ref());
+        assert_eq!(iter.distance.get(&5), Some(6).as_ref());
+        assert_eq!(iter.distance.get(&6), Some(7).as_ref());
+        assert_eq!(iter.distance.get(&7), Some(11).as_ref());
         assert_eq!(iter.parent.get(&1), Some(None).as_ref());
-        assert_eq!(iter.parent.get(&2), Some(Some(1 as usize)).as_ref());
-        assert_eq!(iter.parent.get(&3), Some(Some(1 as usize)).as_ref());
-        assert_eq!(iter.parent.get(&4), Some(Some(2 as usize)).as_ref());
-        assert_eq!(iter.parent.get(&5), Some(Some(4 as usize)).as_ref());
-        assert_eq!(iter.parent.get(&6), Some(Some(4 as usize)).as_ref());
-        assert_eq!(iter.parent.get(&7), Some(Some(5 as usize)).as_ref());
+        assert_eq!(iter.parent.get(&2), Some(Some(1)).as_ref());
+        assert_eq!(iter.parent.get(&3), Some(Some(1)).as_ref());
+        assert_eq!(iter.parent.get(&4), Some(Some(2)).as_ref());
+        assert_eq!(iter.parent.get(&5), Some(Some(4)).as_ref());
+        assert_eq!(iter.parent.get(&6), Some(Some(4)).as_ref());
+        assert_eq!(iter.parent.get(&7), Some(Some(5)).as_ref());
         println!("Fim das iterações")
     }
 
@@ -272,7 +271,7 @@ mod test {
 
         let g: AdjacencyList<char> = AdjacencyList(map);
         let mut iter: DijkstraIter<char, AdjacencyList<char>> = g.shortest_path_dijkstra('A');
-        while let Some(event) = iter.next() {
+        for event in &mut iter {
             if let DijkstraEvent::Discover((node, weight, parent)) = event {
                 println!(
                     "Visitamos o vértice {} e agora tem distância {} a partir do predecessor {}",
@@ -286,12 +285,12 @@ mod test {
         assert_eq!(iter.visited.len(), 6);
         assert_eq!(iter.distance.len(), 6);
         assert_eq!(iter.parent.len(), 6);
-        assert_eq!(iter.distance.get(&'A'), Some(0 as i32).as_ref());
-        assert_eq!(iter.distance.get(&'B'), Some(5 as i32).as_ref());
-        assert_eq!(iter.distance.get(&'C'), Some(2 as i32).as_ref());
-        assert_eq!(iter.distance.get(&'D'), Some(9 as i32).as_ref());
-        assert_eq!(iter.distance.get(&'E'), Some(7 as i32).as_ref());
-        assert_eq!(iter.distance.get(&'F'), Some(8 as i32).as_ref());
+        assert_eq!(iter.distance.get(&'A'), Some(0).as_ref());
+        assert_eq!(iter.distance.get(&'B'), Some(5).as_ref());
+        assert_eq!(iter.distance.get(&'C'), Some(2).as_ref());
+        assert_eq!(iter.distance.get(&'D'), Some(9).as_ref());
+        assert_eq!(iter.distance.get(&'E'), Some(7).as_ref());
+        assert_eq!(iter.distance.get(&'F'), Some(8).as_ref());
         assert_eq!(iter.parent.get(&'A'), Some(None).as_ref());
         assert_eq!(iter.parent.get(&'B'), Some(Some('A')).as_ref());
         assert_eq!(iter.parent.get(&'C'), Some(Some('A')).as_ref());
