@@ -237,6 +237,13 @@ where
         }
         */
     }
+
+    /// Retorna os vizinhos ponderados do nó, se houver.
+    fn weighted_neighbors(&self, node: T) -> Option<&std::collections::HashSet<(T, i32)>> {
+        // supondo que AdjacencyList seja `pub struct AdjacencyList<T>(pub HashMap<T, HashSet<(T,i32)>>);`
+        // ajuste `self.0` para o campo correto da sua struct.
+        self.0.get(&node)
+    }
 }
 
 #[cfg(test)]

@@ -2,6 +2,7 @@ use crate::graphs::{
     BfsIter, BiconnectedComponentsIter, DfsEdgesIter, DfsIter, DijkstraIter, Edge,
 };
 use std::hash::Hash;
+use std::collections::HashSet; // adicionado para weighted_neighbors
 
 pub trait Node: Eq + Hash + Copy {}
 
@@ -145,6 +146,34 @@ where
 {
     /// Returns the total number of **undirected edges** in the graph.
     fn undirected_size(&self) -> usize;
+
+    /// Retorna o conjunto de vizinhos ponderados do vértice (se disponível).
+    /// Implementações que armazenam pesos (AdjacencyList/AdjacencyMatrix) devem sobrescrever.
+    fn weighted_neighbors(&self, _node: T) -> Option<&HashSet<(T, i32)>> {
+        None
+    }
+
+    /// Inicializa o iterador passo-a-passo do Kruskal (apenas para grafos não direcionados).
+    ///
+    /// Implementação padrão delega para KruskalIter::new - implementações concretas não precisam sobrescrever.
+    fn minimum_spanning_tree_kruskal(&self) -> crate::minimum_spanning_tree::KruskalIter<'_, T, Self>
+    where
+        Self: Sized,
+        T: Ord,
+    {
+        crate::minimum_spanning_tree::KruskalIter::new(self)
+    }
+
+    /// Inicializa o iterador passo-a-passo do Prim (apenas para grafos não direcionados).
+    ///
+    /// Implementação padrão delega para PrimIter::new.
+    fn minimum_spanning_tree_prim(&self) -> crate::minimum_spanning_tree::PrimIter<'_, T, Self>
+    where
+        Self: Sized,
+        T: Ord,
+    {
+        crate::minimum_spanning_tree::PrimIter::new(self)
+    }
 
     /// Checks whether the graph is **connected**.
     ///
