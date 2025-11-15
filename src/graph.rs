@@ -1,9 +1,10 @@
-use num_traits::{Bounded, One, Zero};
+use num_traits::{Bounded, CheckedAdd, One, Zero};
 
-use crate::graphs::{
-    BfsIter, BiconnectedComponentsIter, DfsEdgesIter, DfsIter, DijkstraIter, Edge,
+use crate::{
+    graphs::{BfsIter, BiconnectedComponentsIter, DfsEdgesIter, DfsIter, DijkstraIter, Edge},
+    shortest_path::FloydWarshallResult,
 };
-use std::{hash::Hash, ops::Add};
+use std::hash::Hash;
 
 pub trait Node: Eq + Hash + Copy {}
 
@@ -181,15 +182,14 @@ pub trait UndirectedGraph<N: Node>: Graph<N> {
     }
 }
 
-pub trait Weight: Add<Output = Self> + Ord + Bounded + Sized + Zero + Copy + One {}
+pub trait Weight: CheckedAdd + Ord + Bounded + Zero + One + Copy {}
 
-impl<T> Weight for T where T: Add<Output = Self> + Ord + Bounded + Sized + Zero + Copy + One {}
+impl<T> Weight for T where T: CheckedAdd + Ord + Bounded + One + Zero + Copy {}
 
 pub trait WeightedGraph<N: Node, W: Weight>: Graph<N> {
     type WeightedNeighbors<'a>: Iterator<Item = (N, W)>
     where
-        Self: 'a,
-        N: 'a;
+        Self: 'a;
     fn weighted_neighbors(&self, n: N) -> Self::WeightedNeighbors<'_>;
 
     fn add_weighted_edge(&mut self, n: N, m: N, w: W);
@@ -201,21 +201,7 @@ pub trait WeightedGraph<N: Node, W: Weight>: Graph<N> {
         DijkstraIter::new(self, start)
     }
 
-    // fn floyd_warshall(&self) -> (HashMap<N, HashMap<N, W>>, HashMap<N, N>) {
-    //     let mut dist = HashMap::with_capacity(self.order());
-    //     for n in self.nodes() {
-    //         let mut dists
-    //         for m in self.nodes() {
-    //         dist.insert(n, HashMap::f)
-    //         }
-    //     }
-    //
-    //     for k in self.nodes() {
-    //         for i in self.nodes() {
-    //             for j in self.nodes() {
-    //                 let ik =
-    //             }
-    //         }
-    //     }
-    // }
+    fn floyd_warshall(&self) -> FloydWarshallResult<N, W> {
+        FloydWarshallResult::new(self)
+    }
 }
