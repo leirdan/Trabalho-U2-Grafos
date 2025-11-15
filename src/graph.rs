@@ -66,7 +66,7 @@ pub trait Graph<N: Node> {
     /// Removes a **directed edge** from node `n` to node `m`, if it exists.
     ///
     /// If either node does not exist, this operation has no effect.
-    fn remove_edge(&mut self, n: N, m: N, w: Option<i32>);
+    fn remove_edge(&mut self, n: N, m: N);
 
     type Neighbors<'a>: Iterator<Item = N>
     where
@@ -145,9 +145,9 @@ pub trait UndirectedGraph<N: Node>: Graph<N> {
     /// Removes an **undirected edge** `(n <-> m)` from the graph.
     ///
     /// Internally, this removes both directed edges `(n <-> m)` and `(m <-> n)`.
-    fn remove_undirected_edge(&mut self, n: N, m: N, w: Option<i32>) {
-        self.remove_edge(n, m, w);
-        self.remove_edge(m, n, w);
+    fn remove_undirected_edge(&mut self, n: N, m: N) {
+        self.remove_edge(n, m);
+        self.remove_edge(m, n);
     }
 
     /// Returns the **degree** of the given node,
