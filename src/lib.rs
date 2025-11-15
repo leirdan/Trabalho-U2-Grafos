@@ -2,7 +2,7 @@
 mod adjacency_list;
 mod eulerian_cycle;
 mod graph;
-mod minimum_spanning_tree;
+pub mod minimum_spanning_tree;
 mod shortest_path;
 mod traversal;
 
