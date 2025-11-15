@@ -2,7 +2,3 @@
 name = "graphs-algorithms"
 version = "0.1.0"
 edition = "2024"
-
-[workspace]
-members = ["crates/cpp-api", "crates/graph-io", "."]
-
