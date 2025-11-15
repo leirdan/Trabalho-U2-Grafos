@@ -19,7 +19,6 @@ impl<T> Node for T where T: Eq + Hash + Copy {}
 /// # Type Parameters
 /// - `Node`: The type used to represent graph nodes.
 ///   Must implement [`Eq`], [`Hash`], and [`Copy`] to ensure efficient lookups.
-pub trait Node: Eq + Hash + Copy {}
 pub trait Graph<T>
 where
     T: Node,
