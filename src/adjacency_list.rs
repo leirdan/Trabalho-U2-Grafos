@@ -1,6 +1,6 @@
-use crate::graph::Node;
+use crate::graph::{Node, Weight, WeightedGraph};
 use crate::{Graph, UndirectedGraph};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 /// Representa um grafo usando uma lista de adjacência.
 /// A lista é implementada como um *map*, onde cada chave
@@ -9,23 +9,15 @@ use std::collections::{HashMap, HashSet};
 /// o 1º elemento indica o vértice adjacente e o
 /// 2º elemento o peso da aresta.
 #[derive(Debug, Clone, Default)]
-pub struct AdjacencyList<T>(pub HashMap<T, HashSet<(T, i32)>>)
-where
-    T: Node;
+pub struct AdjacencyList<N: Node, W: Weight>(pub HashMap<N, Vec<(N, W)>>);
 
-impl<T> AdjacencyList<T>
-where
-    T: Node,
-{
+impl<N: Node, W: Weight> AdjacencyList<N, W> {
     pub fn new() -> Self {
         AdjacencyList(HashMap::new())
     }
 }
 
-impl<T> Graph<T> for AdjacencyList<T>
-where
-    T: Node,
-{
+impl<N: Node, W: Weight> Graph<N> for AdjacencyList<N, W> {
     fn order(&self) -> usize {
         self.0.len()
     }
@@ -33,17 +25,11 @@ where
     fn size(&self) -> usize {
         self.0
             .keys()
-            .map(|node| {
-                if let Some(n) = self.neighbors(*node) {
-                    n.count()
-                } else {
-                    0
-                }
-            })
+            .map(|node| self.neighbors(*node).count())
             .sum()
     }
 
-    fn node_degrees(&self, _n: T) -> (usize, usize) {
+    fn node_degrees(&self, _n: N) -> (usize, usize) {
         todo!()
         /*
         let out_deg = self.0[n].iter().filter(|&&v| v != 0).count();
@@ -52,15 +38,15 @@ where
             */
     }
 
-    fn nodes(&self) -> impl Iterator<Item = T> {
+    fn nodes(&self) -> impl Iterator<Item = N> {
         self.0.clone().into_keys()
     }
 
-    fn add_node(&mut self, n: T) {
-        self.0.insert(n, HashSet::new());
+    fn add_node(&mut self, n: N) {
+        self.0.insert(n, Vec::new());
     }
 
-    fn remove_node(&mut self, _n: T) {
+    fn remove_node(&mut self, _n: N) {
         todo!()
         /*
         if n < self.0.len() {
@@ -75,15 +61,15 @@ where
         */
     }
 
-    fn add_edge(&mut self, n: T, m: T, w: i32) {
-        if self.0.contains_key(&m)
-            && let Some(node) = self.0.get_mut(&n)
-        {
-            node.insert((m, w));
+    fn add_edge(&mut self, n: N, m: N) {
+        if self.0.contains_key(&m) {
+            self.0
+                .entry(n)
+                .and_modify(|neighbors| neighbors.push((n, W::one())));
         }
     }
 
-    fn remove_edge(&mut self, _n: T, _m: T, _w: Option<i32>) {
+    fn remove_edge(&mut self, _n: N, _m: N, _w: Option<i32>) {
         todo!()
         /*
         if let Some(edges) = self.0.get_mut(n)
@@ -95,27 +81,15 @@ where
     }
 
     type Neighbors<'a>
-        = std::iter::FilterMap<
-        std::iter::Enumerate<std::collections::hash_set::Iter<'a, (T, i32)>>,
-        fn((usize, &'a (T, i32))) -> Option<(T, i32)>,
-    >
+        = impl Iterator<Item = N>
     where
-        T: 'a;
+        Self: 'a;
 
-    fn neighbors<'a>(&'a self, n: T) -> Option<Self::Neighbors<'a>> {
-        fn filter_fn<T: Node>((_, &(node, weight)): (usize, &(T, i32))) -> Option<(T, i32)> {
-            if weight != 0 {
-                Some((node, weight))
-            } else {
-                None
-            }
-        }
-
-        if let Some(neighbors) = self.0.get(&n) {
-            Some(neighbors.iter().enumerate().filter_map(filter_fn))
-        } else {
-            None
-        }
+    fn neighbors(&self, n: N) -> Self::Neighbors<'_> {
+        self.0
+            .get(&n)
+            .into_iter()
+            .flat_map(|set| set.iter().map(|(n, _)| *n))
     }
 
     fn bipartite(&self) -> bool {
@@ -179,10 +153,7 @@ where
     }
 }
 
-impl<T> UndirectedGraph<T> for AdjacencyList<T>
-where
-    T: Node,
-{
+impl<N: Node, W: Weight> UndirectedGraph<N> for AdjacencyList<N, W> {
     fn undirected_size(&self) -> usize {
         todo!()
         /*
@@ -223,7 +194,7 @@ where
         */
     }
 
-    fn undirected_node_degree(&self, _n: T) -> usize {
+    fn undirected_node_degree(&self, _n: N) -> usize {
         todo!()
         /*
         if let Some(row) = self.0.get(node) {
@@ -235,5 +206,27 @@ where
     }
 }
 
-#[cfg(test)]
+impl<N: Node, W: Weight> WeightedGraph<N, W> for AdjacencyList<N, W> {
+    fn add_weighted_edge(&mut self, n: N, m: N, w: W) {
+        if self.0.contains_key(&m) {
+            self.0
+                .entry(n)
+                .and_modify(|neighbors| neighbors.push((n, w)));
+        }
+    }
+
+    type WeightedNeighbors<'a>
+        = impl Iterator<Item = (N, W)>
+    where
+        Self: 'a,
+        N: 'a;
+
+    fn weighted_neighbors(&self, n: N) -> Self::WeightedNeighbors<'_> {
+        self.0
+            .get(&n)
+            .into_iter()
+            .flat_map(|neighbors| neighbors.iter().copied())
+    }
+}
+
 mod tests {}

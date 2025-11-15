@@ -1,12 +1,12 @@
 use graphs_algorithms::Graph;
+use graphs_algorithms::WeightedGraph;
 use graphs_algorithms::graphs::AdjacencyList;
 use graphs_algorithms::graphs::DijkstraEvent;
-use graphs_algorithms::graphs::DijkstraIter;
 use std::collections::HashMap;
 
 fn main() {
     println!("Bem vindo à execução do algoritmo de Dijkstra!");
-    let mut g: AdjacencyList<usize> = AdjacencyList::new();
+    let mut g: AdjacencyList<usize, i32> = AdjacencyList::new();
 
     let edges = vec![
         (1, 6, 3),
@@ -51,12 +51,11 @@ fn main() {
     }
 
     for (u, v, w) in edges {
-        g.add_edge(u, v, w);
+        g.add_weighted_edge(u, v, w);
     }
 
-    let mut iter: DijkstraIter<'_, usize, AdjacencyList<usize>> = g.shortest_path_dijkstra(1);
     let mut discovered_edges: HashMap<usize, (Option<usize>, i32)> = HashMap::new();
-    while let Some(event) = iter.next() {
+    for event in g.djikstra(1) {
         match event {
             DijkstraEvent::Finish => {}
             DijkstraEvent::Discover((u, w, v)) => {
@@ -85,6 +84,6 @@ fn main() {
     for edge in path {
         print!("{:?} ", edge);
     }
-    println!("");
+    println!();
     println!("Custo: {}", distance);
 }

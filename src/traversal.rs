@@ -27,25 +27,25 @@ where
 /// Represents a iterator over a depth-first-search (DFS) traversal.
 ///
 /// The iteration yields a `DfsEvent<Node>` over each instance of `next`.
-pub struct DfsIter<'a, T, G>
+pub struct DfsIter<'a, N, G>
 where
-    G: Graph<T>,
-    T: Node,
+    N: Node,
+    G: Graph<N>,
     Self: 'a,
 {
     graph: &'a G,
-    stack: Vec<(T, G::Neighbors<'a>)>,
-    visited: HashSet<T>,
-    start_node: Option<T>,
+    stack: Vec<(N, G::Neighbors<'a>)>,
+    visited: HashSet<N>,
+    start_node: Option<N>,
 }
 
-impl<'a, T, G> DfsIter<'a, T, G>
+impl<'a, N, G> DfsIter<'a, N, G>
 where
-    T: Node,
-    G: Graph<T>,
+    N: Node,
+    G: Graph<N>,
 {
     /// Creates a new DFS iterator starting from the given node.
-    pub fn new(graph: &'a G, start: T) -> Self {
+    pub fn new(graph: &'a G, start: N) -> Self {
         Self {
             graph,
             stack: vec![],
@@ -58,25 +58,24 @@ where
     ///
     /// This enables starting another DFS while maintains the inner parts of the iterator
     /// initialized, like the `visited` dictionary.
-    pub fn new_start(&mut self, start: T) {
+    pub fn new_start(&mut self, start: N) {
         self.start_node = Some(start)
     }
 }
 
-impl<'a, T, G> Iterator for DfsIter<'a, T, G>
+impl<'a, N, G> Iterator for DfsIter<'a, N, G>
 where
-    T: Node,
-    G: Graph<T>,
+    N: Node,
+    G: Graph<N>,
 {
-    type Item = DfsEvent<T>;
+    type Item = DfsEvent<N>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(start_node) = self.start_node.take()
             && self.visited.insert(start_node)
         {
             self.stack
-                .push((start_node, self.graph.neighbors(start_node).unwrap())); // TODO: remove
-            // unwrap later
+                .push((start_node, self.graph.neighbors(start_node)));
 
             return Some(DfsEvent::Discover(start_node, None));
         }
@@ -85,12 +84,11 @@ where
             if let Some(neighbor) = neighbors.next() {
                 self.stack.push((node, neighbors));
 
-                if self.visited.insert(neighbor.0) {
-                    self.stack
-                        .push((neighbor.0, self.graph.neighbors(neighbor.0).unwrap()));
-                    return Some(DfsEvent::Discover(neighbor.0, Some(node)));
+                if self.visited.insert(neighbor) {
+                    self.stack.push((neighbor, self.graph.neighbors(neighbor)));
+                    return Some(DfsEvent::Discover(neighbor, Some(node)));
                 } else {
-                    return Some(DfsEvent::NonTreeEdge(node, neighbor.0));
+                    return Some(DfsEvent::NonTreeEdge(node, neighbor));
                 }
             } else {
                 return Some(DfsEvent::Finish(node));
@@ -167,18 +165,13 @@ where
         let mut children: Vec<T> = Vec::new();
         let mut events: Vec<BfsEvent<T>> = Vec::new();
 
-        match self.graph.neighbors(node) {
-            None => {}
-            Some(neighbors) => {
-                for n in neighbors {
-                    if self.visited.insert(n.0) {
-                        self.queue.push_back(n.0);
-                        self.parent.insert(n.0, Some(node));
-                        children.push(n.0);
-                    } else if Some(node) != self.parent.get(&n.0).copied().flatten() {
-                        events.push(BfsEvent::CrossEdge(node, n.0));
-                    }
-                }
+        for n in self.graph.neighbors(node) {
+            if self.visited.insert(n) {
+                self.queue.push_back(n);
+                self.parent.insert(n, Some(node));
+                children.push(n);
+            } else if Some(node) != self.parent.get(&n).copied().flatten() {
+                events.push(BfsEvent::CrossEdge(node, n));
             }
         }
 
