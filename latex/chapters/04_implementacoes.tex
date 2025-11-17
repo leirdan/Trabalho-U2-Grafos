@@ -563,6 +563,96 @@ impl<N: Node, W: Weight> FloydWarshallResult<N, W> {
     \end{minted}
 \end{listing}
 
+\subsection{Criação da árvore de caminhos mais curtos}
+
+Para a criação da árvore de menores caminhos, seguiremos uma
+abordagem parecida com a implementação do algoritmo de
+Floyd-Warshall~(\ref{sec:code_floyd-warshall}). Primeiro definiremos
+uma estrutura de retorno, no caso a árvore:
+
+\begin{listing}[H]
+  \caption{Estrutura de retorno do algoritmo de criação da árvore de
+  caminhos mais curtos}
+  \begin{minted}{rust}
+struct ShortestPathTree<Node, Weight> {
+    node: Node,
+    childs: Vec<(Weight, ShortestPathTree<Node, Weight>)>,
+}
+  \end{minted}
+\end{listing}
+
+Novamente, a estrutura é genérica a qualquer tipo de vértice e custo,
+identificados por \texttt{Node} e \texttt{Weight}. \texttt{node}
+representa o valor de um vértice no nó da árvore e \texttt{childs}
+representam os nós filhos da árvore. \texttt{childs} é uma lista de
+tuplas de custo e árvores, o custo nessa tupla representa o custo de
+percorrer a aresta para o nó filho no segundo argumento da tupla.
+
+Quanto a interface do algoritmo, ele será implementado como o
+construtor da estrutura, de maneira similar a interface de
+Floyd-Warshall~(\ref{code:interface_floydwarshall}):
+
+\begin{listing}[H]
+  \caption{Interface do algoritmo de criação da árvore de caminhos mais curtos}
+  \begin{minted}{rust}
+impl<N: Node, W: Weight> ShortestPathTree<N, W> {
+    fn new(g: &(impl WeightedGraph<N, W> + ?Sized), root: N) -> Self;
+}
+  \end{minted}
+	\end{listing}
+
+Assim como o algoritmo de Floyd-Warshall, o construtor espera um
+grafo ponderado, que pode ter seu tamanho conhecido ou não em tempo
+de compilação. Além disso, o algoritmo também espera uma raiz
+escolhida previamente pelo utilizador da interface. Como em Rust não
+há suporte para argumentos com valor padrão, vamos definir uma função
+auxiliar que recebe uma árvore e um dicionário de vértices visitados
+durante a criação da árvore:
+
+\begin{minted}{rust}
+fn build_tree<N: Node, W: Weight>(
+    visited: &mut HashSet<N>,
+    floyd: &FloydWarshallResult<N, W>,
+    tree: &mut ShortestPathTree<N, W>,
+    root: N,
+) {
+    for (&k, &w) in &floyd.dist[&tree.node] {
+        if k != tree.node && floyd.pred[&root][&k] == tree.node && visited.insert(k) {
+            let mut new_child = ShortestPathTree {
+                node: k,
+                childs: vec![],
+            };
+            build_tree(visited, floyd, &mut new_child, root);
+            tree.childs.push((w, new_child));
+        }
+    }
+}
+\end{minted}
+
+A implementação segue fielmente seu pseudocódigo, a principal
+diferença está na condicional \texttt{visited.insert(k)}, que valora
+para verdadeiro somente se foi possível inserir o nó \texttt{k} no
+dicionário de visitados, ou seja, não houve repetição.
+
+Por fim, definimos a função principal como:
+
+\begin{listing}[H]
+  \caption{Implementação do algoritmo da criação da árvore de menores caminhos}
+  \begin{minted}{rust}
+fn new(g: &(impl WeightedGraph<N, W> + ?Sized), root: N) -> Self {
+    let floyd = g.floyd_warshall();
+    let mut visited = HashSet::from([root]);
+    let mut tree = ShortestPathTree {
+        node: root,
+        childs: vec![],
+    };
+    build_tree(&mut visited, &floyd, &mut tree, root);
+
+    tree
+}
+  \end{minted}
+\end{listing}
+
 \subsection{Algoritmo de Hierholzer}
 
 Para o algoritmo de Hierholzer~(\ref{sec:pseudocode_hierholzer}), inicialmente definimos uma
@@ -915,95 +1005,9 @@ impl<N: Node> HierholzerResult<N> {
             }
             2 => (odd_degree_nodes[0], true, false),
             _ => (nodes[0], false, false),
-\subsection{Criação da árvore de caminhos mais curtos}
-
-Para a criação da árvore de menores caminhos, seguiremos uma
-abordagem parecida com a implementação do algoritmo de
-Floyd-Warshall~(\ref{sec:code_floyd-warshall}). Primeiro definiremos
-uma estrutura de retorno, no caso a árvore:
-
-\begin{listing}[H]
-  \caption{Estrutura de retorno do algoritmo de criação da árvore de
-  caminhos mais curtos}
-  \begin{minted}{rust}
-struct ShortestPathTree<Node, Weight> {
-    node: Node,
-    childs: Vec<(Weight, ShortestPathTree<Node, Weight>)>,
-}
-  \end{minted}
-\end{listing}
-
-Novamente, a estrutura é genérica a qualquer tipo de vértice e custo,
-identificados por \texttt{Node} e \texttt{Weight}. \texttt{node}
-representa o valor de um vértice no nó da árvore e \texttt{childs}
-representam os nós filhos da árvore. \texttt{childs} é uma lista de
-tuplas de custo e árvores, o custo nessa tupla representa o custo de
-percorrer a aresta para o nó filho no segundo argumento da tupla.
-
-Quanto a interface do algoritmo, ele será implementado como o
-construtor da estrutura, de maneira similar a interface de
-Floyd-Warshall~(\ref{code:interface_floydwarshall}):
-
-\begin{listing}[H]
-  \caption{Interface do algoritmo de criação da árvore de caminhos mais curtos}
-  \begin{minted}{rust}
-impl<N: Node, W: Weight> ShortestPathTree<N, W> {
-    fn new(g: &(impl WeightedGraph<N, W> + ?Sized), root: N) -> Self;
-}
-  \end{minted}
-\end{listing}
-
-Assim como o algoritmo de Floyd-Warshall, o construtor espera um
-grafo ponderado, que pode ter seu tamanho conhecido ou não em tempo
-de compilação. Além disso, o algoritmo também espera uma raiz
-escolhida previamente pelo utilizador da interface. Como em Rust não
-há suporte para argumentos com valor padrão, vamos definir uma função
-auxiliar que recebe uma árvore e um dicionário de vértices visitados
-durante a criação da árvore:
-
-\begin{minted}{rust}
-fn build_tree<N: Node, W: Weight>(
-    visited: &mut HashSet<N>,
-    floyd: &FloydWarshallResult<N, W>,
-    tree: &mut ShortestPathTree<N, W>,
-    root: N,
-) {
-    for (&k, &w) in &floyd.dist[&tree.node] {
-        if k != tree.node && floyd.pred[&root][&k] == tree.node && visited.insert(k) {
-            let mut new_child = ShortestPathTree {
-                node: k,
-                childs: vec![],
-            };
-            build_tree(visited, floyd, &mut new_child, root);
-            tree.childs.push((w, new_child));
-        }
-    }
-}
+					}
+			}
+	}
 \end{minted}
 \end{listing}
 
-A implemnetação segue fielmente seu pseudocódigo, a principal
-diferença está na condicional \texttt{visited.insert(k)}, que valora
-para verdadeiro somente se foi possível inserir o nó \texttt{k} no
-dicionário de visitados, ou seja, não houve repetição.
-
-Por fim, definimos a função principal como:
-
-\begin{listing}[H]
-  \caption{Implementação do algoritmo da criação da árvore de menores caminhos}
-  \begin{minted}{rust}
-fn new(g: &(impl WeightedGraph<N, W> + ?Sized), root: N) -> Self {
-    let floyd = g.floyd_warshall();
-    let mut visited = HashSet::from([root]);
-    let mut tree = ShortestPathTree {
-        node: root,
-        childs: vec![],
-    };
-    build_tree(&mut visited, &floyd, &mut tree, root);
-
-    tree
-}
-  \end{minted}
-\end{listing}
-
-\section{Algoritmos de Grafos Eulerianos}

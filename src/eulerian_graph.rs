@@ -31,12 +31,12 @@ impl<N: Node> HierholzerResult<N> {
     ///
     /// ## Fluxo
     /// 1. **Cálculo de Graus**: Calcula os graus de entrada e saída de todos os vértices
-    /// 2. **Verificação de Condições**: Determina se o grafo possui ciclo euleriano, 
+    /// 2. **Verificação de Condições**: Determina se o grafo possui ciclo euleriano,
     ///    caminho euleriano ou nenhum dos dois baseado nos graus calculados
-    /// 3. **Casos Especiais**: 
+    /// 3. **Casos Especiais**:
     ///    - Se não existe caminho nem ciclo, retorna estrutura vazia
     ///    - Se existe ciclo trivial (um único vértice), retorna imediatamente
-    /// 4. **Algoritmo Principal**: 
+    /// 4. **Algoritmo Principal**:
     ///    - Usa uma abordagem baseada em pilha para construir o caminho progressivamente
     ///    - Remove arestas conforme são percorridas para evitar repetição
     ///    - Constrói o caminho de trás para frente e depois o reverte
@@ -46,17 +46,16 @@ impl<N: Node> HierholzerResult<N> {
     /// ### Para grafos não direcionados:
     /// - **Ciclo euleriano**: todos os vértices têm grau par
     /// - **Caminho euleriano**: exatamente 0 ou 2 vértices têm grau ímpar
-    /// 
+    ///
     /// ### Para grafos direcionados:
     /// - **Ciclo euleriano**: grau de entrada = grau de saída para todos os vértices
     /// - **Caminho euleriano**: exatamente um vértice tem grau_saída = grau_entrada + 1 (início),
-    ///   exatamente um vértice tem grau_entrada = grau_saída + 1 (fim), e todos os outros 
+    ///   exatamente um vértice tem grau_entrada = grau_saída + 1 (fim), e todos os outros
     ///   têm grau_entrada = grau_saída
     ///
     /// ## Complexidade
     /// - **Tempo**: O(E) onde E é o número de arestas
     /// - **Espaço**: O(V + E) para armazenar a pilha e o caminho
-    pub fn new<G: UndirectedGraph<N>>(graph: &G, is_directed: bool) -> Self {
     pub fn new<G: UndirectedGraph<N> + Clone>(graph: &G, is_directed: bool) -> Self {
         let mut out_degree = HashMap::new();
         let mut in_degree = HashMap::new();
@@ -129,38 +128,38 @@ impl<N: Node> HierholzerResult<N> {
     }
 
     /// Funções auxiliares para o Algoritmo de Hierholzer
-    /// 
+    ///
     /// Este conjunto de funções trabalha em conjunto para preparar e validar
     /// a execução do algoritmo principal:
-    /// 
+    ///
     /// ## Fluxo das Funções Auxiliares:
-    /// 
+    ///
     /// 1. **`compute_every_node_degree`** - Coleta os dados fundamentais
     ///    - Calcula graus de entrada e saída de todos os vértices
     ///    - Para grafos direcionados: calcula separadamente graus de entrada/saída
     ///    - Para grafos não direcionados: grau de entrada = grau de saída
     ///    - *Saída: Preenche as HashMaps `out_degree` e `in_degree`*
-    /// 
+    ///
     /// 2. **`check_eulerian_conditions`** - Decide a viabilidade do algoritmo
     ///    - Analisa os graus calculados para determinar se condições de Euler são satisfeitas
     ///    - Roteia para a função específica (direcionada ou não direcionada)
     ///    - *Saída: (vértice_inicial, tem_caminho, tem_ciclo)*
-    /// 
+    ///
     /// 3. **`check_directed_eulerian`** - Condições para grafos direcionados
     ///    - **Ciclo**: todos os vértices com grau_entrada = grau_saída
     ///    - **Caminho**: um vértice com grau_saída = grau_entrada + 1 (início),
     ///      um vértice com grau_entrada = grau_saída + 1 (fim),
     ///      outros com grau_entrada = grau_saída
-    /// 
+    ///
     /// 4. **`check_undirected_eulerian`** - Condições para grafos não direcionados  
     ///    - **Ciclo**: todos os vértices com grau par
     ///    - **Caminho**: exatamente 0 ou 2 vértices com grau ímpar
-    /// 
+    ///
     /// ## Propósito Geral:
     /// Estas funções garantem que o algoritmo principal só execute quando houver
     /// garantia teórica de existência de caminho/ciclo euleriano, evitando
     /// processamento desnecessário e fornecendo o vértice inicial correto.
-/// 
+    ///
     fn compute_every_node_degree<G: Graph<N>>(
         graph: &G,
         out_degree: &mut HashMap<N, usize>,
