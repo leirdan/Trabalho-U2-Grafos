@@ -39,7 +39,7 @@ impl<N: Node, W: Weight> DijkstraResult<N, W> {
     /// * São utilizados os conjuntos e dicionários auxiliares `visited`, `distance` e `pred`,
     ///   que representam os vértices visitados, a distância até vértice `x` e o predecessor do vértice `x`.
     ///
-    pub fn new(graph: &impl WeightedGraph<N, W>, start: N) -> Self {
+    pub fn new(graph: &(impl WeightedGraph<N, W> + ?Sized), start: N) -> Self {
         let mut route: HashMap<N, (W, Option<N>)> = HashMap::new();
         let mut visited: HashSet<N> = HashSet::new();
         let mut distance: HashMap<N, W> = HashMap::new();
@@ -137,7 +137,7 @@ impl<N: Node, W: Weight> BellmanFordResult<N, W> {
     ///     * Se (u,v) é a melhor alternativa para chegar no vizinho
     ///     * Caso não, há um ciclo negativo
     /// * Retorna um [`BellmanFordResult`] com as variáveis locais `dist`, `pred` e `has_negative_cycle`.
-    pub fn new(g: &impl WeightedGraph<N, W>, start: N) -> Self {
+    pub fn new(g: &(impl WeightedGraph<N, W> + ?Sized), start: N) -> Self {
         let mut dist = HashMap::new();
         let mut pred = HashMap::new();
 
@@ -189,7 +189,7 @@ pub struct FloydWarshallResult<Node, Weight> {
 }
 
 impl<N: Node, W: Weight> FloydWarshallResult<N, W> {
-    pub fn new(g: &impl WeightedGraph<N, W>) -> Self {
+    pub fn new(g: &(impl WeightedGraph<N, W> + ?Sized)) -> Self {
         let mut dist = HashMap::with_capacity(g.order());
         let mut pred = HashMap::with_capacity(g.order());
         for n in g.nodes() {
@@ -237,14 +237,14 @@ impl<N: Node, W: Weight> FloydWarshallResult<N, W> {
     }
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct ShortestPathTree<N, W> {
     pub node: N,
     pub childs: Vec<(W, ShortestPathTree<N, W>)>,
 }
 
 impl<N: Node, W: Weight> ShortestPathTree<N, W> {
-    pub fn new(g: &impl WeightedGraph<N, W>, root: N) -> Self {
+    pub fn new(g: &(impl WeightedGraph<N, W> + ?Sized), root: N) -> Self {
         fn build_tree<N: Node, W: Weight>(
             visited: &mut HashSet<N>,
             floyd: &FloydWarshallResult<N, W>,
@@ -252,10 +252,7 @@ impl<N: Node, W: Weight> ShortestPathTree<N, W> {
             root: N,
         ) {
             for (&k, &w) in &floyd.dist[&tree.node] {
-                if k != tree.node && floyd.pred[&root][&k] == tree.node {
-                    if !visited.insert(k) {
-                        continue;
-                    }
+                if k != tree.node && floyd.pred[&root][&k] == tree.node && visited.insert(k) {
                     let mut new_child = ShortestPathTree {
                         node: k,
                         childs: vec![],
@@ -266,12 +263,12 @@ impl<N: Node, W: Weight> ShortestPathTree<N, W> {
             }
         }
         let floyd = g.floyd_warshall();
+        let mut visited = HashSet::from([root]);
         let mut tree = ShortestPathTree {
             node: root,
             childs: vec![],
         };
-
-        build_tree(&mut HashSet::from([root]), &floyd, &mut tree, root);
+        build_tree(&mut visited, &floyd, &mut tree, root);
 
         tree
     }
