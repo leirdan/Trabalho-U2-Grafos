@@ -476,7 +476,363 @@ impl<N: Node, W: Weight> FloydWarshallResult<N, W> {
         Self { dist, pred }
     }
 }
-  \end{minted}
+    \end{minted}
 \end{listing}
 
-\section{Algoritmos de Grafos Eulerianos}
+\subsection{Algoritmo de Hierholzer}
+
+Para o algoritmo de Hierholzer~(\ref{sec:pseudocode_hierholzer}), inicialmente definimos uma
+estrutura, que vai representar o retorno da função:
+
+\begin{listing}[H]
+  \caption{Estrutura de resultado do Algoritmo de Hierholzer}
+\begin{minted}{rust}
+pub struct HierholzerResult<Node> {
+    pub path: Vec<Node>,
+    pub has_eulerian_path: bool,
+    pub has_eulerian_cycle: bool,
+}
+\end{minted}
+\end{listing}
+
+Ela é genérica a qualquer tipo de nó, identificado por \texttt{Node}. 
+\texttt{path} representa o caminho euleriano encontrado (se existir), 
+\texttt{has\_eulerian\_path} indica se existe um caminho euleriano no grafo,
+e \texttt{has\_eulerian\_cycle} indica se existe um ciclo euleriano no grafo.
+
+Após definir a estrutura, definimos a interface do algoritmo como sendo o
+construtor dessa estrutura, nomeado de \texttt{new}:
+\begin{listing}[H]
+  \caption{Interface do algoritmo de Hierholzer}
+\begin{minted}{rust}
+impl<N: Node> HierholzerResult<N> {
+    pub fn new<G: UndirectedGraph<N>>(graph: &G, is_directed: bool) -> Self;
+}
+\end{minted}
+\end{listing}
+
+O algoritmo espera a implementação de um grafo \texttt{graph} que implementa 
+a trait \texttt{UndirectedGraph} e um booleano \texttt{is\_directed} indicando 
+se o grafo deve ser tratado como direcionado. \texttt{N} é o tipo do nó e é 
+restrito pelo traço \texttt{Node}.
+
+Começando a implementação, definimos as estruturas que vão auxiliar no cálculo
+e as inicializamos:
+
+\begin{minted}{rust}
+let mut out_degree = HashMap::new();
+let mut in_degree = HashMap::new();
+Self::compute_every_node_degree(graph, &mut out_degree, &mut in_degree);
+
+let (mut start_node, has_eulerian_path, has_eulerian_cycle) =
+    Self::check_eulerian_conditions(&out_degree, &in_degree, is_directed);
+\end{minted}
+
+Essa inicialização garante que os graus de todos os vértices sejam calculados
+e que as condições de Euler sejam verificadas antes de executar o algoritmo
+principal. A função \texttt{compute\_every\_node\_degree} calcula os graus de
+entrada e saída de todos os vértices, enquanto \texttt{check\_eulerian\_conditions}
+determina se o grafo possui ciclo euleriano, caminho euleriano, ambos ou nenhum dos dois.
+
+Em seguida, tratamos os casos especiais onde não existe caminho euleriano ou
+onde existe um ciclo trivial:
+
+\begin{minted}{rust}
+if !has_eulerian_path && !has_eulerian_cycle {
+    return HierholzerResult {
+        path: Vec::new(),
+        has_eulerian_cycle,
+        has_eulerian_path,
+    };
+} else if has_eulerian_cycle && has_eulerian_path && out_degree.len() == 1 {
+    return HierholzerResult {
+        path: out_degree.keys().copied().collect::<Vec<N>>(),
+        has_eulerian_cycle,
+        has_eulerian_path,
+    };
+}
+\end{minted}
+
+O primeiro caso lida com grafos que não possuem nem caminho nem ciclo euleriano,
+retornando imediatamente. O segundo caso trata de ciclos triviais em grafos com
+apenas um vértice.
+
+Para o algoritmo principal, inicializamos as estruturas de dados necessárias:
+
+\begin{minted}{rust}
+let mut stack = Vec::new();
+let mut path = Vec::new();
+let mut work_graph: G = graph.clone();
+\end{minted}
+
+A \texttt{stack} é usada para armazenar vértices durante a exploração, o 
+\texttt{path} armazena o caminho final, e \texttt{work\_graph} é uma cópia
+do grafo original onde arestas são removidas conforme são visitadas.
+
+Por fim, partimos para o cerne da implementação, o loop principal do algoritmo:
+
+\begin{minted}{rust}
+loop {
+    if stack.is_empty() && work_graph.neighbors(start_node).count() == 0 {
+        break;
+    } else if work_graph.neighbors(start_node).count() > 0 {
+        stack.push(start_node);
+
+        let next_neighbor = work_graph.neighbors(start_node).next();
+
+        if let Some(neighbor) = next_neighbor {
+            if is_directed {
+                work_graph.remove_edge(start_node, neighbor);
+            } else {
+                work_graph.remove_undirected_edge(start_node, neighbor);
+            }
+
+            start_node = neighbor;
+        }
+    } else {
+        path.push(start_node);
+        if let Some(s) = stack.pop() {
+            start_node = s;
+        }
+
+        if stack.is_empty() {
+            path.push(start_node);
+        }
+    }
+}
+path.reverse();
+\end{minted}
+
+O algoritmo segue uma estratégia baseada em pilha para construir o caminho
+euleriano. Enquanto houver vértices para processar, o algoritmo:
+
+- Se o vértice atual tem arestas incidentes: empilha o vértice e segue uma aresta não visitada.
+
+- Caso contrário: adiciona o vértice ao caminho e retrocede na pilha.
+
+Ao final do loop, o caminho é revertido pois foi construído de trás para frente.
+
+Finalmente, validamos o caminho encontrado e retornamos o resultado:
+
+\begin{minted}{rust}
+let total_edges: usize = if is_directed {
+    out_degree.values().sum()
+} else {
+    out_degree.values().sum::<usize>() / 2
+};
+
+let valid_path = path.len() == total_edges + 1;
+
+Self {
+    path: if valid_path { path } else { Vec::new() },
+    has_eulerian_cycle: valid_path && has_eulerian_cycle,
+    has_eulerian_path: valid_path && has_eulerian_path,
+}
+\end{minted}
+
+A validação verifica se o caminho encontrado tem comprimento adequado (número de arestas + 1)
+e atualiza os flags indicando a existência de ciclo e caminho euleriano de acordo.
+
+A implementação completa do algoritmo é a seguinte:
+
+\begin{listing}[!ht]
+  \caption{Implementação do algoritmo de Hierholzer}
+  \begin{minted}{rust}
+impl<N: Node> HierholzerResult<N> {
+    pub fn new<G: UndirectedGraph<N>>(graph: &G, is_directed: bool) -> Self {
+        let mut out_degree = HashMap::new();
+        let mut in_degree = HashMap::new();
+        Self::compute_every_node_degree(graph, &mut out_degree, &mut in_degree);
+
+        let (mut start_node, has_eulerian_path, has_eulerian_cycle) =
+            Self::check_eulerian_conditions(&out_degree, &in_degree, is_directed);
+
+        if !has_eulerian_path && !has_eulerian_cycle {
+            return HierholzerResult {
+                path: Vec::new(),
+                has_eulerian_cycle,
+                has_eulerian_path,
+            };
+        } else if has_eulerian_cycle && has_eulerian_path && out_degree.len() == 1 {
+            return HierholzerResult {
+                path: out_degree.keys().copied().collect::<Vec<N>>(),
+                has_eulerian_cycle,
+                has_eulerian_path,
+            };
+        }
+
+        let mut stack = Vec::new();
+        let mut path = Vec::new();
+        let mut work_graph: G = graph.clone();
+
+        loop {
+            if stack.is_empty() && work_graph.neighbors(start_node).count() == 0 {
+                break;
+            } else if work_graph.neighbors(start_node).count() > 0 {
+                stack.push(start_node);
+
+                let next_neighbor = work_graph.neighbors(start_node).next();
+
+                if let Some(neighbor) = next_neighbor {
+                    if is_directed {
+                        work_graph.remove_edge(start_node, neighbor);
+                    } else {
+                        work_graph.remove_undirected_edge(start_node, neighbor);
+                    }
+
+                    start_node = neighbor;
+                }
+            } else {
+                path.push(start_node);
+                if let Some(s) = stack.pop() {
+                    start_node = s;
+                }
+
+                if stack.is_empty() {
+                    path.push(start_node);
+                }
+            }
+        }
+        path.reverse();
+
+        let total_edges: usize = if is_directed {
+            out_degree.values().sum()
+        } else {
+            out_degree.values().sum::<usize>() / 2
+        };
+
+        let valid_path = path.len() == total_edges + 1;
+
+        Self {
+            path: if valid_path { path } else { Vec::new() },
+            has_eulerian_cycle: valid_path && has_eulerian_cycle,
+            has_eulerian_path: valid_path && has_eulerian_path,
+        }
+    }
+
+    fn compute_every_node_degree<G: Graph<N>>(
+        graph: &G,
+        out_degree: &mut HashMap<N, usize>,
+        in_degree: &mut HashMap<N, usize>,
+    ) {
+        for node in graph.nodes() {
+            out_degree.insert(node, 0);
+            in_degree.insert(node, 0);
+        }
+
+        for node in graph.nodes() {
+            let neighbors_count = graph.neighbors(node).count();
+            out_degree.insert(node, neighbors_count);
+
+            if graph.is_directed() {
+                for neighbor in graph.neighbors(node) {
+                    *in_degree.entry(neighbor).or_insert(0) += 1;
+                }
+            }
+        }
+
+        if !graph.is_directed() {
+            for node in graph.nodes() {
+                in_degree.insert(node, out_degree[&node]);
+            }
+        }
+    }
+
+    fn check_eulerian_conditions(
+        out_degree: &HashMap<N, usize>,
+        in_degree: &HashMap<N, usize>,
+        is_directed: bool,
+    ) -> (N, bool, bool) {
+        let nodes: Vec<N> = out_degree.keys().copied().collect();
+
+        if nodes.is_empty() {
+            panic!("Graph has no nodes");
+        }
+
+        if is_directed {
+            Self::check_directed_eulerian(out_degree, in_degree, &nodes)
+        } else {
+            Self::check_undirected_eulerian(out_degree, &nodes)
+        }
+    }
+
+    fn check_directed_eulerian(
+        out_degree: &HashMap<N, usize>,
+        in_degree: &HashMap<N, usize>,
+        nodes: &[N],
+    ) -> (N, bool, bool) {
+        let mut start_candidate = None;
+        let mut end_candidate = None;
+        let mut balanced_nodes = 0;
+        let mut total_nodes_with_edges = 0;
+
+        for &node in nodes {
+            let out = out_degree.get(&node).copied().unwrap_or(0);
+            let inn = in_degree.get(&node).copied().unwrap_or(0);
+
+            if out == 0 && inn == 0 {
+                continue;
+            }
+
+            total_nodes_with_edges += 1;
+
+            if out == inn {
+                balanced_nodes += 1;
+            } else if out == inn + 1 {
+                if start_candidate.is_some() {
+                    return (nodes[0], false, false);
+                }
+                start_candidate = Some(node);
+            } else if inn == out + 1 {
+                if end_candidate.is_some() {
+                    return (nodes[0], false, false);
+                }
+                end_candidate = Some(node);
+            } else {
+                return (nodes[0], false, false);
+            }
+        }
+
+        if balanced_nodes == total_nodes_with_edges {
+            let start = nodes
+                .iter()
+                .find(|&&n| out_degree.get(&n).copied().unwrap_or(0) > 0)
+                .copied()
+                .unwrap_or(nodes[0]);
+            (start, true, true)
+        } else if start_candidate.is_some()
+            && end_candidate.is_some()
+            && balanced_nodes == total_nodes_with_edges - 2
+        {
+            (start_candidate.unwrap(), true, false)
+        } else {
+            (nodes[0], false, false)
+        }
+    }
+
+    fn check_undirected_eulerian(out_degree: &HashMap<N, usize>, nodes: &[N]) -> (N, bool, bool) {
+        let mut odd_degree_nodes = Vec::new();
+
+        for &node in nodes {
+            let degree = out_degree.get(&node).copied().unwrap_or(0);
+            if degree > 0 && degree % 2 != 0 {
+                odd_degree_nodes.push(node);
+            }
+        }
+
+        match odd_degree_nodes.len() {
+            0 => {
+                let start = nodes
+                    .iter()
+                    .find(|&&n| out_degree.get(&n).copied().unwrap_or(0) > 0)
+                    .copied()
+                    .unwrap_or(nodes[0]);
+                (start, true, true)
+            }
+            2 => (odd_degree_nodes[0], true, false),
+            _ => (nodes[0], false, false),
+        }
+    }
+}
+\end{minted}
+\end{listing}
