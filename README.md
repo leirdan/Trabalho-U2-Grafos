@@ -1,6 +1,6 @@
 # Trabalho Unidade 2 Grafos
 
-O resumo em vídeo está disponível [aqui](https://drive.google.com/file/d/182CoEXJ8a6K_hYNHm8SAt-6muQefViQk/view?usp=drive_link)
+O resumo em vídeo está disponível [aqui](https://drive.google.com/file/d/14Frkv91yFWFBreM_ojlaLVPwyXyVqA9f/view?usp=sharing)
 
 ## Estrutura do repositório em Rust 🦀
 
