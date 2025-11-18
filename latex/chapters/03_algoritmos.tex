@@ -296,3 +296,71 @@ Naturalmente, para recuperar o caminho mais curto entre $r$ e qualquer outro,
 bastar percorrer a árvore.
 
 \section{Algoritmos em Grafos Eulerianos}
+\label{sec:pseudocode_hierholzer}
+
+Os algoritmos apresentados nesta seção têm por objetivo determinar a
+existência de Caminhos Eulerianos e Ciclos Eulerianos em grafos, além
+de produzir explicitamente o caminho (quando existente). A fundamentação
+teórica encontra-se no Capítulo~\ref{02_revisao_teorica.tex}, onde são
+descritas as condições necessárias e suficientes para que um grafo seja
+euleriano, tanto no caso orientado quanto não orientado.
+
+O método utilizado para construir o caminho ou ciclo euleriano é o
+\textbf{Algoritmo de Hierholzer}, originalmente proposto em 1736 e
+considerado o procedimento padrão para percorrer todas as arestas de um
+grafo exatamente uma vez.
+
+\subsection{Algoritmo Principal de Hierholzer}
+
+% tex-fmt: off
+\begin{algorithm}[!ht]
+\caption{Algoritmo de Hierholzer}
+\begin{algorithmic}[1]
+\Function{Hierholzer}{$G$, $\texttt{is\_directed}$}
+    \State $\mathsf{outDegree}, \mathsf{inDegree} \gets$ \Call{CalcularGraus}{$G$, $\texttt{is\_directed}$}
+    \State $(v_0, \mathsf{hasPath}, \mathsf{hasCycle}) \gets$ 
+           \Call{VerificarCondicoesEulerianas}{$\mathsf{outDegree}, \mathsf{inDegree}, \texttt{is\_directed}$}
+    
+    \If{não $\mathsf{hasPath}$ e não $\mathsf{hasCycle}$}
+        \State \Return $(\emptyset, \mathsf{falso}, \mathsf{falso})$
+    \EndIf
+    
+    \If{$\mathsf{hasCycle}$ e $\mathsf{hasPath}$ e $|\mathsf{outDegree}| = 1$}
+        \State $\mathsf{path} \gets$ lista com único vértice de $\mathsf{outDegree}$
+        \State \Return $(\mathsf{path}, \mathsf{verdadeiro}, \mathsf{verdadeiro})$
+    \EndIf
+    
+    \State $\mathsf{stack} \gets \emptyset$
+    \State $\mathsf{path} \gets \emptyset$
+    \State $\mathsf{workGraph} \gets$ cópia de $G$
+    \State $u \gets v_0$
+    
+    \While{$\mathsf{stack} \neq \emptyset$ \textbf{ou} $\mathsf{workGraph.vizinhos}(u) \neq \emptyset$}
+        \If{$\mathsf{workGraph.vizinhos}(u) \neq \emptyset$}
+            \State empilhar($\mathsf{stack}$, $u$)
+            \State $v \gets$ primeiro vizinho de $u$ em $\mathsf{workGraph}$
+            \If{$\texttt{is\_directed}$}
+                \State $\mathsf{workGraph.removerAresta}(u, v)$
+            \Else
+                \State $\mathsf{workGraph.removerArestaNaoDirecionada}(u, v)$
+            \EndIf
+            \State $u \gets v$
+        \Else
+            \State adicionar $u$ a $\mathsf{path}$
+            \State $u \gets$ desempilhar($\mathsf{stack}$)
+            \If{$\mathsf{stack} = \emptyset$}
+                \State adicionar $u$ a $\mathsf{path}$
+            \EndIf
+        \EndIf
+    \EndWhile
+    
+    \State inverter $\mathsf{path}$
+    
+    \State $\mathsf{totalArestas} \gets$ \Call{ContarArestas}{$G$, $\texttt{is\_directed}$}
+    \State $\mathsf{caminhoValido} \gets (|\mathsf{path}| = \mathsf{totalArestas} + 1)$
+    
+    \State \Return $(\mathsf{path}, \mathsf{hasCycle} \ \mathbf{e} \ \mathsf{caminhoValido}, \mathsf{hasPath} \ \mathbf{e} \ \mathsf{caminhoValido})$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+% tex-fmt: on
