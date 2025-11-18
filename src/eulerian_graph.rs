@@ -2,13 +2,60 @@ use crate::graph::Node;
 use crate::{Graph, UndirectedGraph};
 use std::collections::HashMap;
 
+/// Estrutura que guarda o resultado do Algoritmo de Hierholzer para encontrar
+/// caminhos e ciclos eulerianos em grafos.
+///
+/// [`HierholzerResult`] guarda três campos principais:
+/// - `path`: o caminho euleriano encontrado (se existir)
+/// - `has_eulerian_path`: indica se o grafo possui um caminho euleriano
+/// - `has_eulerian_cycle`: indica se o grafo possui um ciclo euleriano
+///
+/// Um **ciclo euleriano** é um ciclo que visita cada aresta exatamente uma vez
+/// e retorna ao vértice inicial, enquanto um **caminho euleriano** é um caminho
+/// que visita cada aresta exatamente uma vez, mas não necessariamente retorna
+/// ao vértice incial.
 pub struct HierholzerResult<Node> {
     pub path: Vec<Node>,
     pub has_eulerian_path: bool,
     pub has_eulerian_cycle: bool,
 }
 
+/// Bloco de implementação para a [`HierholzerResult`] com a função `new()`.
+///
 impl<N: Node> HierholzerResult<N> {
+    /// Método que executa o Algoritmo de Hierholzer e retorna um [`HierholzerResult`]
+    ///
+    /// ## Argumentos
+    /// * `graph`: um tipo que implementa o traço [`UndirectedGraph`], como [`AdjacencyList`]
+    /// * `is_directed`: booleano indicando se o grafo deve ser tratado como direcionado
+    ///
+    /// ## Fluxo
+    /// 1. **Cálculo de Graus**: Calcula os graus de entrada e saída de todos os vértices
+    /// 2. **Verificação de Condições**: Determina se o grafo possui ciclo euleriano,
+    ///    caminho euleriano ou nenhum dos dois baseado nos graus calculados
+    /// 3. **Casos Especiais**:
+    ///    - Se não existe caminho nem ciclo, retorna estrutura vazia
+    ///    - Se existe ciclo trivial (um único vértice), retorna imediatamente
+    /// 4. **Algoritmo Principal**:
+    ///    - Usa uma abordagem baseada em pilha para construir o caminho progressivamente
+    ///    - Remove arestas conforme são percorridas para evitar repetição
+    ///    - Constrói o caminho de trás para frente e depois o reverte
+    /// 5. **Validação Final**: Verifica se o caminho encontrado é válido
+    ///
+    /// ## Condições de Euler
+    /// ### Para grafos não direcionados:
+    /// - **Ciclo euleriano**: todos os vértices têm grau par
+    /// - **Caminho euleriano**: exatamente 0 ou 2 vértices têm grau ímpar
+    ///
+    /// ### Para grafos direcionados:
+    /// - **Ciclo euleriano**: grau de entrada = grau de saída para todos os vértices
+    /// - **Caminho euleriano**: exatamente um vértice tem grau_saída = grau_entrada + 1 (início),
+    ///   exatamente um vértice tem grau_entrada = grau_saída + 1 (fim), e todos os outros
+    ///   têm grau_entrada = grau_saída
+    ///
+    /// ## Complexidade
+    /// - **Tempo**: O(E) onde E é o número de arestas
+    /// - **Espaço**: O(V + E) para armazenar a pilha e o caminho
     pub fn new<G: UndirectedGraph<N> + Clone>(graph: &G, is_directed: bool) -> Self {
         let mut out_degree = HashMap::new();
         let mut in_degree = HashMap::new();
@@ -80,6 +127,39 @@ impl<N: Node> HierholzerResult<N> {
         }
     }
 
+    /// Funções auxiliares para o Algoritmo de Hierholzer
+    ///
+    /// Este conjunto de funções trabalha em conjunto para preparar e validar
+    /// a execução do algoritmo principal:
+    ///
+    /// ## Fluxo das Funções Auxiliares:
+    ///
+    /// 1. **`compute_every_node_degree`** - Coleta os dados fundamentais
+    ///    - Calcula graus de entrada e saída de todos os vértices
+    ///    - Para grafos direcionados: calcula separadamente graus de entrada/saída
+    ///    - Para grafos não direcionados: grau de entrada = grau de saída
+    ///    - *Saída: Preenche as HashMaps `out_degree` e `in_degree`*
+    ///
+    /// 2. **`check_eulerian_conditions`** - Decide a viabilidade do algoritmo
+    ///    - Analisa os graus calculados para determinar se condições de Euler são satisfeitas
+    ///    - Roteia para a função específica (direcionada ou não direcionada)
+    ///    - *Saída: (vértice_inicial, tem_caminho, tem_ciclo)*
+    ///
+    /// 3. **`check_directed_eulerian`** - Condições para grafos direcionados
+    ///    - **Ciclo**: todos os vértices com grau_entrada = grau_saída
+    ///    - **Caminho**: um vértice com grau_saída = grau_entrada + 1 (início),
+    ///      um vértice com grau_entrada = grau_saída + 1 (fim),
+    ///      outros com grau_entrada = grau_saída
+    ///
+    /// 4. **`check_undirected_eulerian`** - Condições para grafos não direcionados  
+    ///    - **Ciclo**: todos os vértices com grau par
+    ///    - **Caminho**: exatamente 0 ou 2 vértices com grau ímpar
+    ///
+    /// ## Propósito Geral:
+    /// Estas funções garantem que o algoritmo principal só execute quando houver
+    /// garantia teórica de existência de caminho/ciclo euleriano, evitando
+    /// processamento desnecessário e fornecendo o vértice inicial correto.
+    ///
     fn compute_every_node_degree<G: Graph<N>>(
         graph: &G,
         out_degree: &mut HashMap<N, usize>,
@@ -338,63 +418,4 @@ mod tests {
         );
         assert_eq!(result.path, vec!['A']);
     }
-
-    // Está errado, não? É para ter caminho euleriano
-    // #[test]
-    // fn test() {
-    //     println!("GRAFO 2: Caminho Euleriano (Não Direcionado)");
-    //     println!("Vértices: 1, 2, 3, 4, 5, 6, 7");
-
-    //     let mut graph = AdjacencyList::<char, i32>::new();
-
-    //     graph.add_node('1');
-    //     graph.add_node('2');
-    //     graph.add_node('3');
-    //     graph.add_node('4');
-    //     graph.add_node('5');
-    //     graph.add_node('6');
-    //     graph.add_node('7');
-
-    //     graph.add_edge('1', '2');
-    //     graph.add_edge('1', '3');
-    //     graph.add_edge('2', '3');
-    //     graph.add_edge('2', '4');
-    //     graph.add_edge('2', '5');
-    //     graph.add_edge('3', '4');
-    //     graph.add_edge('3', '6');
-    //     graph.add_edge('4', '5');
-    //     graph.add_edge('4', '6');
-    //     graph.add_edge('5', '6');
-    //     graph.add_edge('5', '7');
-    //     graph.add_edge('6', '7');
-
-    //     let result = HierholzerResult::new(&graph, false);
-
-    //     println!("Resultado:");
-    //     println!("- Tem ciclo euleriano: {}", result.has_eulerian_cycle);
-    //     println!("- Tem caminho euleriano: {}", result.has_eulerian_path);
-    //     println!("- Caminho encontrado: {:?}", result.path);
-
-    //     if result.has_eulerian_cycle {
-    //         println!("\nO grafo possui um CICLO EULERIANO!");
-    //         println!("Todos os vértices têm grau par");
-    //         if !result.path.is_empty() {
-    //             println!(
-    //                 "Começa e termina no mesmo vértice: {} → ... → {}",
-    //                 result.path[0],
-    //                 result.path[result.path.len() - 1]
-    //             );
-    //         }
-
-    //         let expected_length = 12 + 1;
-    //         if result.path.len() == expected_length {
-    //             println!("Percorre todas as {} arestas exatamente uma vez", 12);
-    //         }
-    //     }
-
-    //     if result.has_eulerian_path {
-    //         println!("O grafo também possui CAMINHO EULERIANO!");
-    //         println!("(Um ciclo euleriano é um caso especial de caminho euleriano)");
-    //     }
-    // }
 }
